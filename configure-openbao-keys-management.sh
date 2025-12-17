@@ -1,11 +1,27 @@
 #!/bin/bash
 
+# OpenBao Configuration Script for EHR System
+# Sets up cryptographic engines, keys, and secret storage for EHR application
+# Loads configuration from .env file for environment-specific settings
+
 echo "================================================"
 echo "  Configuring OpenBao for EHR System"
+echo "  Loading configuration from environment variables"
 echo "================================================"
 
-VAULT_ADDR="http://localhost:18200"
-VAULT_TOKEN="ehr-permanent-token"
+# Load environment variables from .env file if it exists
+# Falls back to default values if .env is not present
+if [ -f .env ]; then
+    echo "Loading configuration from .env file..."
+    source .env
+else
+    echo "Warning: .env file not found, using default configuration"
+fi
+
+# Set OpenBao connection parameters
+# Uses environment variables with fallback to defaults
+VAULT_ADDR="${OPENBAO_ADDR:-http://localhost:18200}"
+VAULT_TOKEN="${OPENBAO_TOKEN:-ehr-permanent-token}"
 
 echo ""
 echo "Step 1: Checking OpenBao status..."

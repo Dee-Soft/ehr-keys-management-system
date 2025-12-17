@@ -1,6 +1,8 @@
 {
   "name": "ehr-keys-management-system",
   "version": "1.0.0",
+  "author": "Sarfaraj Shahjahan",
+  "license": "MIT",
   "description": "EHR Keys Management System with Conventional Commits",
   "private": true,
   "scripts": {

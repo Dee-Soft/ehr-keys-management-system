@@ -1,62 +1,90 @@
 services:
-  # PostgreSQL for OpenBao Storage
+  # PostgreSQL Database Service
+  # Provides persistent storage backend for OpenBao secrets and cryptographic keys
   postgres-keys:
     image: postgres:17-alpine
     container_name: postgres-keys
     restart: unless-stopped
     ports:
-      - "5433:5432"  # Different port to avoid conflicts with other PostgreSQL instances
+      # External port mapping: host:container
+      # Uses port 5433 on host to avoid conflicts with other PostgreSQL instances
+      - "5433:5432"
     environment:
+      # Database configuration - credentials for OpenBao storage
       POSTGRES_DB: openbao_vault
       POSTGRES_USER: openbao_user
       POSTGRES_PASSWORD: OpenBaoSecurePassword123!
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
     volumes:
+      # Persistent data volume for PostgreSQL
       - postgres-keys-data:/var/lib/postgresql
+      # Initialization scripts for database setup
       - ./postgresql/init:/docker-entrypoint-initdb.d:ro
     networks:
       - ehr-keys-net
     healthcheck:
+      # Health check verifies PostgreSQL is ready to accept connections
       test: ["CMD-SHELL", "pg_isready -U openbao_user"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 60s
+    logging:
+      # Docker logging driver configuration with ISO 8601 timestamps
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "{{.Name}}"
 
-  # OpenBao Server with PostgreSQL Storage
+  # OpenBao Secrets Management Service
+  # Provides cryptographic key management and secrets storage for EHR system
   openbao:
     image: openbao/openbao:latest
     container_name: openbao
     restart: unless-stopped
     ports:
-      - "18200:8200"  # External port for management
+      # External access to OpenBao API and UI
+      - "18200:8200"
     environment:
-      # FIXED DEVELOPMENT TOKEN - Never changes
-      VAULT_DEV_ROOT_TOKEN_ID: "ehr-permanent-token"
+      # Development token loaded from .env file
+      # In production, this should be replaced with proper authentication
+      VAULT_DEV_ROOT_TOKEN_ID: "${OPENBAO_TOKEN:-ehr-permanent-token}"
       VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
-      # Optional: Disable dev mode warnings in logs
+      # Controls whether dev token is stored in the storage backend
       VAULT_DEV_NO_STORE_TOKEN: "false"
     cap_add:
+      # Required for memory locking to protect sensitive data
       - IPC_LOCK
     volumes:
+      # Configuration files for OpenBao
       - ./openbao/config:/vault/config:ro
+      # Log directory for structured JSON logs with ISO timestamps
       - ./openbao/logs:/vault/logs
     command: 
       - server
       - -config=/vault/config/openbao.hcl
       - -dev
-      - -dev-root-token-id=ehr-permanent-token
+      - -dev-root-token-id=${OPENBAO_TOKEN:-ehr-permanent-token}
     depends_on:
       postgres-keys:
         condition: service_healthy
     networks:
       - ehr-keys-net
     healthcheck:
+      # Health check verifies OpenBao API is responsive
       test: ["CMD", "wget", "--no-verbose", "--spider", "http://127.0.0.1:8200/v1/sys/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 60s
+    logging:
+      # Docker logging driver configuration with ISO 8601 timestamps
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "{{.Name}}"
 
 volumes:
   postgres-keys-data:
