@@ -63,8 +63,8 @@ Create a `.env` file for custom configuration (optional):
 # Copy the example configuration
 cp .env.example .env  # If an example file exists
 
-# Or create your own .env file with these variables:
-# OPENBAO_TOKEN=your-custom-token-here
+# Or create own .env file with these variables:
+# OPENBAO_TOKEN= custom-token-here
 # OPENBAO_ADDR=http://localhost:18200
 ```
 

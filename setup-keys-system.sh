@@ -17,7 +17,7 @@ mkdir -p openbao/logs
 chmod -R 755 openbao/logs
 
 echo ""
-echo "🐳 Cleaning up old network and containers..."
+echo "Cleaning up old network and containers..."
 docker-compose -f docker-compose-keys.yml down 2>/dev/null
 docker network rm ehr-keys-net 2>/dev/null || true
 
@@ -87,7 +87,7 @@ if [ "$RESPONSE" = "200" ] || [ "$RESPONSE" = "501" ]; then
     echo "   OPENBAO_TOKEN=\$OPENBAO_TOKEN"
     
     # Create configuration reference file
-    cat > CONFIGURATION_REFERENCE.md << CONFIGEOF
+    cat > CONFIGURATION_REFERENCE.md << 'CONFIGEOF'
 # EHR Keys Management System Configuration
 
 ## Environment Configuration
@@ -106,13 +106,13 @@ if [ "$RESPONSE" = "200" ] || [ "$RESPONSE" = "501" ]; then
 - Log retention: Docker logging driver (10MB max, 3 files)
 
 ## Integration with EHR Backend
-In your EHR backend `.env` file:
+In EHR backend `.env` file:
 \`\`\`bash
 OPENBAO_ADDR=http://openbao:8200
 OPENBAO_TOKEN=\$OPENBAO_TOKEN
 \`\`\`
 
-In your EHR `docker-compose.yml`, connect to the network:
+In EHR `docker-compose.yml`, connect to the network:
 \`\`\`yaml
 networks:
   ehr-keys-net:
