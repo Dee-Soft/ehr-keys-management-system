@@ -24,7 +24,7 @@ services:
       - ehr-keys-net
     healthcheck:
       # Health check verifies PostgreSQL is ready to accept connections
-      test: ["CMD-SHELL", "pg_isready -U openbao_user"]
+      test: ["CMD-SHELL", "pg_isready -U openbao_user -d openbao_vault"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -60,6 +60,7 @@ services:
       # Configuration files for OpenBao
       - ./openbao/config:/vault/config:ro
       # Log directory for structured JSON logs with ISO timestamps
+      # Includes operational logs and audit logs
       - ./openbao/logs:/vault/logs
     command: 
       - server

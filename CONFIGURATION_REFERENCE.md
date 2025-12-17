@@ -41,6 +41,7 @@ networks:
 
 ## Logging Configuration
 - OpenBao: JSON format with ISO 8601 timestamps to ./openbao/logs/openbao.log
+- OpenBao Audit: JSON audit logs to ./openbao/logs/audit.log
 - PostgreSQL: Docker JSON logging driver with ISO timestamps
 - Log level: info (OpenBao), default (PostgreSQL)
 
@@ -51,3 +52,4 @@ networks:
 - \`./logs-keys-system.sh\` - View container logs
 - \`./test-connection.sh\` - Test system connectivity
 - \`./configure-openbao-keys-management.sh\` - Configure cryptographic keys
+- \`./manage-audit-logs.sh\` - Manage audit devices and audit logs

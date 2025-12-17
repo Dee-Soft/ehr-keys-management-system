@@ -18,6 +18,17 @@ log_level = "info"
 log_format = "json"
 log_file = "/vault/logs/openbao.log"
 
+# Audit Device Configuration
+# File-based audit logging for critical operations
+audit "file" {
+  type = "file"
+  path = "/vault/logs/audit.log"
+  description = "Audit logs for critical operations"
+  options = {
+    file_path = "/vault/logs/audit.log"
+  }
+}
+
 # Development Settings
 # Required for containerized environments without mlock capability
 disable_mlock = true

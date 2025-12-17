@@ -364,12 +364,110 @@ docker-compose -f docker-compose-keys.yml up -d
 
 ### Production Recommendations
 
-1. **Enable TLS**: Configure OpenBao with SSL certificates
-2. **Token Management**: Implement proper token rotation and policies
-3. **Network Security**: Use internal-only networking where possible
-4. **Access Control**: Implement fine-grained policies for different services
-5. **Audit Logging**: Enable OpenBao audit devices for compliance
-6. **Backup Strategy**: Regular backups of PostgreSQL volume and OpenBao snapshots
+1. **Enable TLS**: Configure OpenBao with SSL certificates for all API communications
+2. **Token Management**: Implement proper token rotation, policies, and short-lived tokens
+3. **Network Security**: Use internal-only networking, firewalls, and network segmentation
+4. **Access Control**: Implement fine-grained policies using OpenBao's policy system
+5. **Audit Logging**: 
+   - Enable multiple audit devices for redundancy (file + syslog)
+   - Implement log signing for integrity verification
+   - Configure log rotation and archival policies
+   - Monitor audit logs for suspicious activities
+6. **Backup Strategy**: Regular backups of PostgreSQL volume and OpenBao snapshots with encryption
+7. **Monitoring**: Implement comprehensive monitoring with alerts for critical events
+8. **Regular Updates**: Keep OpenBao and PostgreSQL updated with security patches
+
+## Audit Logging
+
+OpenBao audit logs provide comprehensive recording of all API requests and responses, essential for security compliance and monitoring critical operations.
+
+### Audit Log Configuration
+
+The system is configured with file-based audit logging:
+
+- **Audit device**: File-based audit device
+- **Log location**: `./openbao/logs/audit.log` (container: `/vault/logs/audit.log`)
+- **Log format**: JSON with ISO 8601 timestamps
+- **Content**: All API requests and responses with sensitive data hashed
+
+### What Gets Audited
+
+1. **Authentication Events**: All login attempts, token creations, and authentication failures
+2. **Key Management**: Key creation, rotation, deletion, and policy changes
+3. **Secrets Operations**: Critical secret reads/writes (sensitive data is hashed)
+4. **Policy Changes**: All ACL and policy modifications
+5. **System Operations**: Configuration changes and system management
+6. **Error Events**: All system errors and warnings
+
+### Managing Audit Logs
+
+#### Using the Audit Management Script
+
+```bash
+# List configured audit devices
+./manage-audit-logs.sh list
+
+# View audit log statistics
+./manage-audit-logs.sh stats
+
+# Rotate audit logs (backup and truncate)
+./manage-audit-logs.sh rotate
+
+# Test audit functionality
+./manage-audit-logs.sh test
+
+# Enable/disable audit devices
+./manage-audit-logs.sh enable
+./manage-audit-logs.sh disable
+```
+
+#### Using the Audit Log Viewer
+
+```bash
+# Show summary statistics
+python3 view-audit-logs.py --summary
+
+# Show recent entries (default: 10)
+python3 view-audit-logs.py --entries 20
+
+# Filter by operation type
+python3 view-audit-logs.py --filter "Key Management"
+
+# Search for specific terms
+python3 view-audit-logs.py --search "transit/encrypt"
+
+# Export report to file
+python3 view-audit-logs.py --export audit-report.txt
+```
+
+### Audit Log Security
+
+1. **Sensitive Data Protection**: OpenBao automatically hashes sensitive strings (tokens, passwords) using HMAC-SHA256
+2. **Log Integrity**: Consider implementing log signing for tamper detection in production
+3. **Access Control**: Audit logs should be accessible only to authorized personnel
+4. **Retention**: Implement log rotation and archival policies based on compliance requirements
+
+### Example Audit Log Entry
+
+```json
+{
+  "time": "2024-01-15T10:30:45.123456Z",
+  "type": "request",
+  "auth": {
+    "client_token": "hmac-sha256:abcd1234...",
+    "accessor": "hmac-sha256:efgh5678..."
+  },
+  "request": {
+    "id": "req-123456",
+    "operation": "update",
+    "path": "transit/keys/ehr-encryption-key",
+    "remote_address": "192.168.1.100"
+  },
+  "response": {
+    "status_code": 200
+  }
+}
+```
 
 ## Script Reference
 
@@ -381,6 +479,8 @@ docker-compose -f docker-compose-keys.yml up -d
 | `logs-keys-system.sh` | View container logs | `./logs-keys-system.sh` |
 | `test-connection.sh` | Test system connectivity | `./test-connection.sh` |
 | `configure-openbao-keys-management.sh` | Configure cryptographic keys | `./configure-openbao-keys-management.sh` |
+| `manage-audit-logs.sh` | Manage audit devices and logs | `./manage-audit-logs.sh [command]` |
+| `view-audit-logs.py` | Analyze audit logs | `python3 view-audit-logs.py [options]` |
 
 ## Support
 
