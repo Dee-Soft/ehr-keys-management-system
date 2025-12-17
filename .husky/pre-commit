@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Add your pre-commit checks here
+# Examples:
+# - Run Python formatters: black . && isort .
+# - Run linters: pylint src/
+# - Run Go formatters: go fmt ./...
+# - Run tests: npm test or pytest or go test ./...
+
+echo "✓ Pre-commit checks passed (customize this hook in .husky/pre-commit)"
+

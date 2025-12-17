@@ -1,0 +1,23 @@
+{
+  "name": "ehr-keys-management-system",
+  "version": "1.0.0",
+  "description": "EHR Keys Management System with Conventional Commits",
+  "private": true,
+  "scripts": {
+    "commit": "cz",
+    "prepare": "husky"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
+    "commitizen": "^4.3.0",
+    "cz-conventional-changelog": "^3.3.0",
+    "husky": "^8.0.3"
+  }
+}
+
