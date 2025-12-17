@@ -1,0 +1,97 @@
+#!/bin/bash
+
+echo "================================================"
+echo "  Configuring OpenBao for EHR System"
+echo "================================================"
+
+VAULT_ADDR="http://localhost:18200"
+VAULT_TOKEN="ehr-permanent-token"
+
+echo ""
+echo "Step 1: Checking OpenBao status..."
+STATUS=$(curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
+  $VAULT_ADDR/v1/sys/health)
+
+if ! echo "$STATUS" | grep -q '"initialized":true'; then
+    echo "OpenBao not properly initialized"
+    exit 1
+fi
+
+echo "OpenBao is initialized (PostgreSQL storage backend)"
+
+echo ""
+echo "🔧 Step 2: Enabling Transit Engine for cryptography..."
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
+  --request POST \
+  --data '{"type":"transit"}' \
+  $VAULT_ADDR/v1/sys/mounts/transit 2>/dev/null
+
+echo "🔧 Step 3: Creating cryptographic keys..."
+# RSA-2048 for key exchange
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
+  --request POST \
+  --data '{"type":"rsa-2048", "exportable": true}' \
+  $VAULT_ADDR/v1/transit/keys/ehr-rsa-key 2>/dev/null
+
+# AES-256 for data encryption
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
+  --request POST \
+  --data '{"type":"aes256-gcm96", "derived": true}' \
+  $VAULT_ADDR/v1/transit/keys/ehr-aes-master 2>/dev/null
+
+echo "🔧 Step 4: Setting auto-rotation policies..."
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
+  --request POST \
+  --data '{"auto_rotate_period":"720h"}' \
+  $VAULT_ADDR/v1/transit/keys/ehr-rsa-key/config 2>/dev/null
+
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
+  --request POST \
+  --data '{"auto_rotate_period":"2160h"}' \
+  $VAULT_ADDR/v1/transit/keys/ehr-aes-master/config 2>/dev/null
+
+echo "🔧 Step 5: Enabling KV v2 for EHR secrets..."
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
+  --request POST \
+  --data '{"type":"kv", "options":{"version":"2"}}' \
+  $VAULT_ADDR/v1/sys/mounts/ehr 2>/dev/null
+
+echo "🔧 Step 6: Storing EHR configuration keys..."
+# MongoDB connection string for EHR backend
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
+  --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"data":{"connection_string":"mongodb://mongoDB:27017/ehr-system"}}' \
+  $VAULT_ADDR/v1/ehr/data/mongodb 2>/dev/null
+
+# JWT secret
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
+  --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"data":{"secret":"ehr-jwt-super-secret-key-123456"}}' \
+  $VAULT_ADDR/v1/ehr/data/jwt 2>/dev/null
+
+# API keys or other secrets
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
+  --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"data":{"encryption_enabled":"true", "key_rotation_days":"30"}}' \
+  $VAULT_ADDR/v1/ehr/data/config 2>/dev/null
+
+echo ""
+echo "Configuration Complete!"
+echo ""
+echo "Test the setup:"
+echo "------------------"
+echo "# Generate a test data key:"
+echo "curl --header \"X-Vault-Token: ehr-permanent-token\" \\"
+echo "  --request POST \\"
+echo "  http://localhost:18200/v1/transit/datakey/plaintext/ehr-aes-master"
+echo ""
+echo "# Get RSA public key:"
+echo "curl --header \"X-Vault-Token: ehr-permanent-token\" \\"
+echo "  http://localhost:18200/v1/transit/keys/ehr-rsa-key"
+echo ""
+echo "# Read stored secrets:"
+echo "curl --header \"X-Vault-Token: ehr-permanent-token\" \\"
+echo "  http://localhost:18200/v1/ehr/data/mongodb"
