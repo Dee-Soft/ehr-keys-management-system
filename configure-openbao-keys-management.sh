@@ -62,6 +62,12 @@ curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
   --data '{"type":"aes256-gcm96", "derived": true}' \
   $VAULT_ADDR/v1/transit/keys/ehr-aes-master-backend 2>/dev/null
 
+# Frontend AES key
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
+  --request POST \
+  --data '{"type":"aes256-gcm96", "derived": true}' \
+  $VAULT_ADDR/v1/transit/keys/ehr-aes-master-frontend 2>/dev/null
+
 echo "🔧 Step 4: Setting auto-rotation policies..."
 curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
   --request POST \
