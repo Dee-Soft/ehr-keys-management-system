@@ -43,17 +43,24 @@ curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
   $VAULT_ADDR/v1/sys/mounts/transit 2>/dev/null
 
 echo "🔧 Step 3: Creating cryptographic keys..."
-# RSA-2048 for key exchange
+
+# Backend RSA key
 curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
   --request POST \
   --data '{"type":"rsa-2048", "exportable": true}' \
-  $VAULT_ADDR/v1/transit/keys/ehr-rsa-key 2>/dev/null
+  $VAULT_ADDR/v1/transit/keys/ehr-rsa-exchange-backend 2>/dev/null
 
-# AES-256 for data encryption
+# Frontend RSA key  
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
+  --request POST \
+  --data '{"type":"rsa-2048", "exportable": true}' \
+  $VAULT_ADDR/v1/transit/keys/ehr-rsa-exchange-frontend 2>/dev/null
+
+# Backend AES key
 curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
   --request POST \
   --data '{"type":"aes256-gcm96", "derived": true}' \
-  $VAULT_ADDR/v1/transit/keys/ehr-aes-master 2>/dev/null
+  $VAULT_ADDR/v1/transit/keys/ehr-aes-master-backend 2>/dev/null
 
 echo "🔧 Step 4: Setting auto-rotation policies..."
 curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
